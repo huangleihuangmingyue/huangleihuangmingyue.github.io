@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>星际课堂管理系统</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0a0f2b;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 50, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 50px rgba(0, 191, 255, 0.3);
+            border: 2px solid #00bfff;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00f7ff;
+            text-shadow: 0 0 10px #00f7ff;
+            font-size: 2.5em;
+            margin: 20px 0;
+            letter-spacing: 3px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .space-btn {
+            background: linear-gradient(45deg, #001d3d, #003566);
+            border: 1px solid #00bfff;
+            color: #00f7ff;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 5px rgba(0, 247, 255, 0.5);
+        }
+
+        .space-btn:hover {
+            background: linear-gradient(45deg, #003566, #001d3d);
+            box-shadow: 0 0 15px #00bfff;
+            transform: translateY(-2px);
+        }
+
+        .classroom-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 30px 0;
+        }
+
+        .platform {
+            background: rgba(0, 63, 127, 0.8);
+            border: 2px solid #00bfff;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            width: 300px;
+        }
+
+        .platform:after {
+            content: '讲台';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0a0f2b;
+            color: #00f7ff;
+            padding: 0 15px;
+            font-size: 1.2em;
+        }
+
+        .seat-map-container {
+            width: 100%;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .seat-map {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 1000px;
+        }
+
+        .seat-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .student-seat {
+            padding: 15px 10px;
+            border: 1px solid #00bfff;
+            border-radius: 8px;
+            background: rgba(0, 31, 63, 0.8);
+            color: #00f7ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            width: 120px;
+            min-width: 120px;
+            box-sizing: border-box;
+        }
+
+        .student-seat.empty {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .student-seat:hover {
+            background: rgba(0, 63, 127, 0.8);
+            box-shadow: 0 0 15px #00bfff;
+        }
+
+        .student-seat.reported {
+            background: linear-gradient(45deg, #6a0000, #8b0000);
+            animation: alert 1s infinite alternate;
+        }
+
+        .student-seat.praised {
+            background: linear-gradient(45deg, #006a00, #008b00);
+            animation: praise 1s infinite alternate;
+        }
+
+        .student-seat.called {
+            background: linear-gradient(45deg, #6a006a, #8b008b);
+            animation: called 1s infinite alternate;
+        }
+
+        .student-seat.draggable {
+            cursor: move;
+        }
+
+        .student-seat.dragging {
+            opacity: 0.8;
+            transform: scale(1.05);
+            z-index: 100;
+        }
+
+        .student-seat.absent {
+            position: relative;
+        }
+        
+        .student-seat.absence {
+            position: relative;
+        }
+        
+        .student-seat.absent::before {
+            content: '请假';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            font-weight: bold;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+        }
+        
+        .student-seat.absence::before {
+            content: '缺课';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 165, 0, 0.9);
+            color: white;
+            font-weight: bold;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 15, 30, 0.95);
+            border: 2px solid #00bfff;
+            border-radius: 15px;
+            padding: 30px;
+            z-index: 1000;
+            box-shadow: 0 0 50px rgba(0, 191, 255, 0.3);
+        }
+
+        .call-modal {
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .called-name {
+            font-size: 3em;
+            color: #ff0;
+            text-shadow: 0 0 20px #ff0;
+            margin: 20px 0;
+            animation: pulse 1s infinite alternate;
+        }
+
+        .pronunciation-hint {
+            color: #f80;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        select, input {
+            background: rgba(0, 31, 63, 0.8);
+            border: 1px solid #00bfff;
+            color: #00f7ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: 'Orbitron', sans-serif;
+            width: 250px;
+        }
+
+        @keyframes alert {
+            from { box-shadow: 0 0 10px #ff0000; }
+            to { box-shadow: 0 0 20px #ff0000; }
+        }
+
+        @keyframes praise {
+            from { box-shadow: 0 0 10px #00ff00; }
+            to { box-shadow: 0 0 20px #00ff00; }
+        }
+
+        @keyframes called {
+            from { box-shadow: 0 0 10px #ff00ff; }
+            to { box-shadow: 0 0 20px #ff00ff; }
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 1.5s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            from { opacity: 0.3; }
+            to { opacity: 1; }
+        }
+
+        .export-section {
+            margin-top: 20px;
+            border-top: 1px solid rgba(0, 191, 255, 0.3);
+            padding-top: 15px;
+        }
+
+        .record-type {
+            margin-bottom: 15px;
+        }
+
+        .record-type label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        .record-type input {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: rgba(0, 31, 63, 0.9);
+            min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 8px;
+            border: 1px solid #00bfff;
+        }
+
+        .dropdown-content a {
+            color: #00f7ff;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background 0.3s;
+        }
+
+        .dropdown-content a:hover {
+            background: rgba(0, 63, 127, 0.8);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .author-info {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: #00f7ff;
+            font-size: 14px;
+            text-shadow: 0 0 5px rgba(0, 247, 255, 0.5);
+            background: rgba(0, 31, 63, 0.7);
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid #00bfff;
+            z-index: 10;
+        }
+
+        .attendance-section {
+            display: none;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .attendance-options {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .attendance-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .absent-btn {
+            background: linear-gradient(45deg, #8b0000, #ff0000);
+            border: 1px solid #ff4444;
+            color: white;
+        }
+
+        .absence-btn {
+            background: linear-gradient(45deg, #8b5a00, #ffa500);
+            border: 1px solid #ffcc44;
+            color: white;
+        }
+
+        .present-btn {
+            background: linear-gradient(45deg, #006a00, #00cc00);
+            border: 1px solid #44ff44;
+            color: white;
+        }
+
+        .attendance-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-seat-map, .print-seat-map * {
+                visibility: visible;
+            }
+            .print-seat-map {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                color: black;
+                padding: 20px;
+                box-sizing: border-box;
+                transform: rotate(0deg);
+                transform-origin: 0 0;
+            }
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+            .print-platform-container {
+                display: flex;
+                justify-content: center;
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            .print-platform {
+                background: #f0f0f0;
+                border: 2px solid #333;
+                border-radius: 10px;
+                padding: 15px;
+                text-align: center;
+                width: 300px;
+                position: relative;
+            }
+            .print-platform:after {
+                content: '讲台';
+                position: absolute;
+                bottom: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: white;
+                color: #333;
+                padding: 0 15px;
+                font-size: 1.2em;
+            }
+            .print-seat-map-container {
+                width: 100%;
+                margin-top: 20px;
+            }
+            .print-seat-map-rows {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+            .print-seat-row {
+                display: flex;
+                gap: 10px;
+                width: 100%;
+            }
+            .print-student-seat {
+                padding: 10px;
+                border: 1px solid #333;
+                border-radius: 5px;
+                background: #f9f9f9;
+                min-height: 50px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                width: 120px;
+                min-width: 120px;
+                box-sizing: border-box;
+                font-size: 14px;
+                page-break-inside: avoid;
+            }
+            .print-title {
+                text-align: center;
+                font-size: 24px;
+                margin-bottom: 20px;
+                font-weight: bold;
+            }
+            .print-date {
+                text-align: right;
+                margin-bottom: 10px;
+                font-size: 14px;
+            }
+            .print-absent {
+                position: relative;
+            }
+            .print-absence {
+                position: relative;
+            }
+            .print-absent::after {
+                content: '请假';
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                background: rgba(255, 0, 0, 0.8);
+                color: white;
+                font-weight: bold;
+                padding: 2px 5px;
+                border-radius: 4px;
+                font-size: 12px;
+            }
+            .print-absence::after {
+                content: '缺课';
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                background: rgba(255, 165, 0, 0.9);
+                color: white;
+                font-weight: bold;
+                padding: 2px 5px;
+                border-radius: 4px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="starContainer"></div>
+    
+    <div class="container">
+        <div class="author-info">软件设计：来宾市实验学校 黄 雷</div>
+        
+        <h1>🪐 星际课堂管理系统 🚀</h1>
+        
+        <div class="toolbar">
+            <div class="file-input">
+                <button class="space-btn" onclick="document.getElementById('importStudents').click()">
+                    📁 导入名单
+                </button>
+                <input type="file" id="importStudents" accept=".csv,.txt" hidden>
+            </div>
+            <button class="space-btn" onclick="downloadTemplate()">
+                📥 下载模板
+            </button>
+            <button class="space-btn" onclick="exportStatistics()">
+                📊 导出统计
+            </button>
+            <button class="space-btn" onclick="randomCall()" style="background: linear-gradient(45deg, #3d001d, #660033);">
+                🎲 随机点名
+            </button>
+            <button class="space-btn" id="lockSeatsBtn" onclick="toggleSeatLock()">
+                🔓 解锁座位
+            </button>
+            <div class="dropdown">
+                <button class="space-btn">
+                    🔀 排列座位 ▼
+                </button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="arrangeSeats('random')">随机安排座位</a>
+                    <a href="#" onclick="arrangeSeats('flow')">按规律流动排列</a>
+                </div>
+            </div>
+            <button class="space-btn" onclick="printSeatMap()" style="background: linear-gradient(45deg, #1d3d00, #336600);">
+                🖨️ 导出座位表
+            </button>
+        </div>
+
+        <div class="classroom-container">
+            <div class="platform"></div>
+            <div class="seat-map-container">
+                <div id="seatMap" class="seat-map"></div>
+            </div>
+        </div>
+
+        <div id="violationModal" class="modal">
+            <h3 style="color: #00f7ff; margin-top: 0">📝 学生行为记录</h3>
+            
+            <div class="record-type">
+                <label><input type="radio" name="recordType" value="violation" checked> 违纪记录</label>
+                <label><input type="radio" name="recordType" value="praise"> 表扬记录</label>
+                <label><input type="radio" name="recordType" value="attendance"> 考勤记录</label>
+            </div>
+            
+            <div id="violationSection">
+                <select id="violationType">
+                    <option value="说话">🗣️ 说话</option>
+                    <option value="睡觉">💤 睡觉</option>
+                    <option value="过位">🚶 过位</option>
+                    <option value="打架">👊 打架</option>
+                    <option value="骂人">😠 骂人</option>
+                    <option value="吐口水">💦 吐口水</option>
+                    <option value="丢垃圾">🗑️ 丢垃圾</option>
+                    <option value="其他">❓ 其他情况</option>
+                </select>
+                <input type="text" id="customViolation" placeholder="请输入具体内容..." 
+                       style="display: none; width: 200px">
+            </div>
+            
+            <div id="praiseSection" style="display: none;">
+                <select id="praiseType">
+                    <option value="积极回答问题">🙋 积极回答问题</option>
+                    <option value="拾金不昧">💰 拾金不昧</option>
+                    <option value="帮助老师做好事">👨‍🏫 帮助老师做好事</option>
+                    <option value="帮助同学做好事">👫 帮助同学做好事</option>
+                    <option value="积极劳动">🧹 积极劳动</option>
+                    <option value="其他好行为">🌟 其他好行为</option>
+                </select>
+                <input type="text" id="customPraise" placeholder="请输入具体内容..." 
+                       style="display: none; width: 200px">
+            </div>
+            
+            <div id="attendanceSection" class="attendance-section">
+                <h4 style="color: #00f7ff; margin-bottom: 15px;">选择考勤状态</h4>
+                <div class="attendance-options">
+                    <div class="attendance-btn absent-btn" onclick="recordAttendance('请假')">请假</div>
+                    <div class="attendance-btn absence-btn" onclick="recordAttendance('缺课')">缺课</div>
+                    <div class="attendance-btn present-btn" onclick="recordAttendance('正常')">正常</div>
+                </div>
+            </div>
+
+            <div class="export-section">
+                <button class="space-btn" onclick="exportCurrentStudentRecords()" 
+                        style="width: 100%; margin: 10px 0">
+                    📄 导出当前学生档案
+                </button>
+            </div>
+
+            <div style="margin-top: 20px">
+                <button class="space-btn" onclick="recordBehavior()">✅ 确认记录</button>
+                <button class="space-btn" onclick="closeModal()">❌ 取消</button>
+            </div>
+        </div>
+
+        <div id="callModal" class="modal call-modal" style="display: none;">
+            <h3 style="color: #00f7ff; margin-top: 0">🎲 随机点名结果</h3>
+            <div class="called-name" id="calledStudent"></div>
+            <div class="pronunciation-hint" id="pronunciationHint" style="display: none;">
+                注意："覃"字的正确发音是"qín"，不是"tán"
+            </div>
+            <button class="space-btn" onclick="closeCallModal()" style="margin-top: 20px;">
+                确定
+            </button>
+        </div>
+
+        <div id="printSeatMap" class="print-seat-map" style="display: none;">
+            <div class="print-title" id="printTitle">班级座位表</div>
+            <div class="print-date" id="printDate"></div>
+            <div class="print-platform-container">
+                <div class="print-platform"></div>
+            </div>
+            <div class="print-seat-map-container">
+                <div class="print-seat-map-rows" id="printSeatMapRows"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        let currentStudent = null;
+        let violations = JSON.parse(localStorage.getItem('violations')) || {};
+        let praises = JSON.parse(localStorage.getItem('praises')) || {};
+        let attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+        let calledStudents = JSON.parse(localStorage.getItem('calledStudents')) || [];
+        let availableStudents = [];
+        let seatMap = JSON.parse(localStorage.getItem('seatMap')) || [];
+        let isSeatLocked = true;
+        let draggedSeat = null;
+        let currentFileName = '班级管理情况汇总表';
+
+        // 固定座位布局 - 7行8列共56个座位
+        const TOTAL_SEATS = 56;
+        const SEATS_PER_ROW = 8;
+        const TOTAL_ROWS = 7;
+
+        // 初始化座位图
+        function initializeSeatMap() {
+            if (seatMap.length > 0 && seatMap.flat().filter(s => s).length > 0) {
+                renderSeatMap();
+                return;
+            }
+            
+            seatMap = [];
+            let studentIndex = 0;
+            
+            for (let row = 0; row < TOTAL_ROWS; row++) {
+                const rowSeats = [];
+                for (let col = 0; col < SEATS_PER_ROW; col++) {
+                    if (studentIndex < students.length) {
+                        rowSeats.push(students[studentIndex]);
+                        studentIndex++;
+                    } else {
+                        rowSeats.push(null);
+                    }
+                }
+                seatMap.push(rowSeats);
+            }
+            
+            localStorage.setItem('seatMap', JSON.stringify(seatMap));
+            renderSeatMap();
+        }
+
+        // 渲染座位图
+        function renderSeatMap() {
+            const seatMapElement = document.getElementById('seatMap');
+            seatMapElement.innerHTML = '';
+            
+            seatMap.forEach((row, rowIndex) => {
+                if (!row.some(student => student)) return;
+                
+                const rowElement = document.createElement('div');
+                rowElement.className = 'seat-row';
+                
+                row.forEach((student, colIndex) => {
+                    const seatElement = document.createElement('div');
+                    seatElement.className = 'student-seat';
+                    seatElement.dataset.row = rowIndex;
+                    seatElement.dataset.col = colIndex;
+                    
+                    if (!student) {
+                        seatElement.classList.add('empty');
+                        rowElement.appendChild(seatElement);
+                        return;
+                    }
+                    
+                    const violationCount = violations[student]?.length || 0;
+                    const praiseCount = praises[student]?.length || 0;
+                    const isCalled = calledStudents.includes(student);
+                    const attendanceStatus = getAttendanceStatus(student);
+                    
+                    if (attendanceStatus === '请假') {
+                        seatElement.classList.add('absent');
+                    } else if (attendanceStatus === '缺课') {
+                        seatElement.classList.add('absence');
+                    }
+                    
+                    if (isCalled) {
+                        seatElement.classList.add('called');
+                    } else if (violationCount > 0 && praiseCount > 0) {
+                        seatElement.style.background = 'linear-gradient(135deg, #6a0000 50%, #006a00 50%)';
+                    } else if (violationCount > 0) {
+                        seatElement.classList.add('reported');
+                    } else if (praiseCount > 0) {
+                        seatElement.classList.add('praised');
+                    }
+                    
+                    seatElement.innerHTML = `
+                        <div>${student}</div>
+                        ${violationCount > 0 ? 
+                        `<div style="font-size:0.8em;color:#ff4444;margin-top:5px">
+                            🚫${violationCount}次
+                        </div>` : ''}
+                        ${praiseCount > 0 ? 
+                        `<div style="font-size:0.8em;color:#44ff44;margin-top:5px">
+                            👍${praiseCount}次
+                        </div>` : ''}
+                        ${isCalled ? 
+                        `<div style="font-size:0.8em;color:#ff44ff;margin-top:5px">
+                            ✅已点名
+                        </div>` : ''}
+                    `;
+                    
+                    seatElement.onclick = (e) => {
+                        if (isSeatLocked && student) {
+                            openRecordModal(student);
+                        }
+                    };
+                    
+                    if (!isSeatLocked) {
+                        seatElement.classList.add('draggable');
+                        seatElement.draggable = true;
+                        
+                        seatElement.addEventListener('dragstart', (e) => {
+                            draggedSeat = { row: rowIndex, col: colIndex, student };
+                            e.dataTransfer.setData('text/plain', '');
+                            setTimeout(() => {
+                                seatElement.classList.add('dragging');
+                            }, 0);
+                        });
+                        
+                        seatElement.addEventListener('dragend', () => {
+                            seatElement.classList.remove('dragging');
+                        });
+                    }
+                    
+                    seatElement.addEventListener('dragover', (e) => {
+                        if (!isSeatLocked && draggedSeat) {
+                            e.preventDefault();
+                        }
+                    });
+                    
+                    seatElement.addEventListener('drop', (e) => {
+                        if (!isSeatLocked && draggedSeat) {
+                            e.preventDefault();
+                            
+                            const targetRow = parseInt(seatElement.dataset.row);
+                            const targetCol = parseInt(seatElement.dataset.col);
+                            
+                            // 交换两个座位的学生
+                            const temp = seatMap[targetRow][targetCol];
+                            seatMap[targetRow][targetCol] = draggedSeat.student;
+                            seatMap[draggedSeat.row][draggedSeat.col] = temp;
+                            
+                            localStorage.setItem('seatMap', JSON.stringify(seatMap));
+                            renderSeatMap();
+                            
+                            draggedSeat = null;
+                        }
+                    });
+                    
+                    rowElement.appendChild(seatElement);
+                });
+                
+                seatMapElement.appendChild(rowElement);
+            });
+        }
+
+        // 获取学生考勤状态
+        function getAttendanceStatus(student) {
+            if (!attendance[student] || attendance[student].length === 0) {
+                return null;
+            }
+            
+            // 获取最新的考勤记录
+            const latestRecord = attendance[student][attendance[student].length - 1];
+            
+            // 直接返回最新状态，不再自动处理请假过期
+            return latestRecord.status;
+        }
+
+        // 打印座位表
+        function printSeatMap() {
+            const printElement = document.getElementById('printSeatMap');
+            const printRows = document.getElementById('printSeatMapRows');
+            const printDate = document.getElementById('printDate');
+            const printTitle = document.getElementById('printTitle');
+            
+            const today = new Date();
+            printDate.textContent = `日期: ${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+            printTitle.textContent = '座位表';
+            
+            printRows.innerHTML = '';
+            
+            seatMap.forEach(row => {
+                if (!row.some(student => student)) return;
+                
+                const rowElement = document.createElement('div');
+                rowElement.className = 'print-seat-row';
+                
+                row.forEach(student => {
+                    const seatElement = document.createElement('div');
+                    seatElement.className = 'print-student-seat';
+                    
+                    if (student) {
+                        seatElement.textContent = student;
+                        const violationCount = violations[student]?.length || 0;
+                        const praiseCount = praises[student]?.length || 0;
+                        const attendanceStatus = getAttendanceStatus(student);
+                        
+                        if (violationCount > 0) {
+                            seatElement.innerHTML += `<div style="font-size:0.7em;color:#ff0000;margin-top:3px">🚫${violationCount}次</div>`;
+                        }
+                        if (praiseCount > 0) {
+                            seatElement.innerHTML += `<div style="font-size:0.7em;color:#00aa00;margin-top:3px">👍${praiseCount}次</div>`;
+                        }
+                        if (attendanceStatus === '请假') {
+                            seatElement.classList.add('print-absent');
+                        } else if (attendanceStatus === '缺课') {
+                            seatElement.classList.add('print-absence');
+                        }
+                    } else {
+                        seatElement.innerHTML = '&nbsp;';
+                    }
+                    
+                    rowElement.appendChild(seatElement);
+                });
+                
+                printRows.appendChild(rowElement);
+            });
+            
+            printElement.style.display = 'block';
+            window.print();
+            printElement.style.display = 'none';
+        }
+
+        // 切换座位锁定状态
+        function toggleSeatLock() {
+            isSeatLocked = !isSeatLocked;
+            document.getElementById('lockSeatsBtn').textContent = 
+                isSeatLocked ? '🔓 解锁座位' : '🔒 锁定座位';
+            renderSeatMap();
+        }
+
+        // 排列座位
+        function arrangeSeats(mode) {
+            if (students.length === 0) {
+                alert('请先导入学生名单');
+                return;
+            }
+            
+            if (mode === 'random') {
+                // 随机排列
+                const allStudents = seatMap.flat().filter(student => student);
+                const shuffledStudents = [...allStudents];
+                
+                // Fisher-Yates 洗牌算法
+                for (let i = shuffledStudents.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledStudents[i], shuffledStudents[j]] = [shuffledStudents[j], shuffledStudents[i]];
+                }
+                
+                // 重新填充座位
+                let studentIndex = 0;
+                for (let row = 0; row < seatMap.length; row++) {
+                    for (let col = 0; col < seatMap[row].length; col++) {
+                        if (seatMap[row][col] !== null) {
+                            if (studentIndex < shuffledStudents.length) {
+                                seatMap[row][col] = shuffledStudents[studentIndex];
+                                studentIndex++;
+                            } else {
+                                seatMap[row][col] = null;
+                            }
+                        }
+                    }
+                }
+            } else if (mode === 'flow') {
+                // 按规律流动排列，空位不参与流动
+                const occupiedSeats = [];
+                
+                // 收集所有有学生的座位
+                for (let row = 0; row < seatMap.length; row++) {
+                    for (let col = 0; col < seatMap[row].length; col++) {
+                        if (seatMap[row][col]) {
+                            occupiedSeats.push({
+                                row,
+                                col,
+                                student: seatMap[row][col]
+                            });
+                        }
+                    }
+                }
+                
+                if (occupiedSeats.length === 0) return;
+                
+                // 流动排列：每个学生移动到下一个学生的位置
+                const firstStudent = occupiedSeats[0].student;
+                
+                for (let i = 0; i < occupiedSeats.length - 1; i++) {
+                    seatMap[occupiedSeats[i].row][occupiedSeats[i].col] = 
+                        seatMap[occupiedSeats[i+1].row][occupiedSeats[i+1].col];
+                }
+                
+                // 最后一个学生移动到第一个学生的位置
+                const lastSeat = occupiedSeats[occupiedSeats.length - 1];
+                seatMap[lastSeat.row][lastSeat.col] = firstStudent;
+            }
+            
+            localStorage.setItem('seatMap', JSON.stringify(seatMap));
+            renderSeatMap();
+        }
+
+        // 下载模板
+        function downloadTemplate() {
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            const content = "学生姓名\n张三\n李四\n王五\n赵六\n陈七\n覃同学";
+            const blob = new Blob([bom, content], {type: 'text/csv;charset=UTF-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '学生名单模板.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 文件导入处理 - 改进编码检测
+        document.getElementById('importStudents').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            currentFileName = file.name;
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const buffer = e.target.result;
+                    let content = '';
+                    
+                    // 尝试UTF-8解码
+                    try {
+                        const decoder = new TextDecoder('utf-8');
+                        content = decoder.decode(buffer);
+                        
+                        // 处理BOM头
+                        if (content.charCodeAt(0) === 0xFEFF) {
+                            content = content.substring(1);
+                        }
+                    } catch (utf8Error) {
+                        console.log('UTF-8解码失败，尝试GBK');
+                        
+                        // 如果UTF-8失败，尝试GBK
+                        try {
+                            // 使用TextDecoder API (部分浏览器支持)
+                            if (typeof TextDecoder === 'function') {
+                                const decoder = new TextDecoder('gbk');
+                                content = decoder.decode(buffer);
+                            } else {
+                                // 如果不支持TextDecoder，使用简单的GBK转UTF-8方案
+                                // 这里使用简单的替换方案，实际项目中可能需要更复杂的转换
+                                const gbkArray = new Uint8Array(buffer);
+                                content = gbkArray.reduce((acc, byte) => acc + String.fromCharCode(byte), '');
+                            }
+                        } catch (gbkError) {
+                            console.error('GBK解码失败:', gbkError);
+                            alert('文件解码失败，请确保文件使用UTF-8或GBK编码');
+                            return;
+                        }
+                    }
+                    
+                    // 处理数据
+                    students = content.split(/\r?\n/)
+                        .map(name => name.trim())
+                        .filter((name, index) => name && !(index === 0 && (name === '学生姓名' || name === '姓名')));
+                    
+                    if (students.length === 0) {
+                        alert('导入的名单中没有有效学生姓名');
+                        return;
+                    }
+
+                    localStorage.setItem('students', JSON.stringify(students));
+                    resetCallSystem();
+                    seatMap = [];
+                    localStorage.setItem('seatMap', JSON.stringify(seatMap));
+                    initializeSeatMap();
+                    
+                    alert(`成功导入 ${students.length} 名学生`);
+                } catch (error) {
+                    console.error('导入错误:', error);
+                    alert('导入失败，请检查文件格式和编码');
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('文件读取失败，请重试');
+            };
+            
+            // 使用readAsArrayBuffer而不是readAsText，以便手动处理编码
+            reader.readAsArrayBuffer(file);
+        });
+
+        // 行为记录功能
+        function openRecordModal(student) {
+            currentStudent = student;
+            document.getElementById('violationModal').style.display = 'block';
+            
+            // 默认显示违纪记录部分
+            document.getElementById('violationSection').style.display = 'block';
+            document.getElementById('praiseSection').style.display = 'none';
+            document.getElementById('attendanceSection').style.display = 'none';
+        }
+
+        function closeModal() {
+            document.getElementById('violationModal').style.display = 'none';
+            document.getElementById('customViolation').style.display = 'none';
+            document.getElementById('customViolation').value = '';
+            document.getElementById('customPraise').style.display = 'none';
+            document.getElementById('customPraise').value = '';
+        }
+
+        function recordBehavior() {
+            const recordType = document.querySelector('input[name="recordType"]:checked').value;
+            
+            if (recordType === 'violation') {
+                const type = document.getElementById('violationType').value;
+                const custom = document.getElementById('customViolation').value;
+                const violation = type === '其他' ? custom : type;
+                
+                if (!violation) return alert('请输入违纪内容');
+                
+                violations[currentStudent] = violations[currentStudent] || [];
+                violations[currentStudent].push({
+                    time: new Date().toLocaleString('zh-CN'),
+                    type: violation,
+                    category: 'violation'
+                });
+                
+                localStorage.setItem('violations', JSON.stringify(violations));
+            } else if (recordType === 'praise') {
+                const type = document.getElementById('praiseType').value;
+                const custom = document.getElementById('customPraise').value;
+                const praise = type === '其他好行为' ? custom : type;
+                
+                if (!praise) return alert('请输入表扬内容');
+                
+                praises[currentStudent] = praises[currentStudent] || [];
+                praises[currentStudent].push({
+                    time: new Date().toLocaleString('zh-CN'),
+                    type: praise,
+                    category: 'praise'
+                });
+                
+                localStorage.setItem('praises', JSON.stringify(praises));
+            }
+            
+            renderSeatMap();
+            closeModal();
+        }
+
+        // 记录考勤状态
+        function recordAttendance(status) {
+            if (!currentStudent) return;
+            
+            attendance[currentStudent] = attendance[currentStudent] || [];
+            attendance[currentStudent].push({
+                time: new Date().toLocaleString('zh-CN'),
+                status: status,
+                type: status === '请假' ? '请假' : (status === '缺课' ? '缺课' : '销假')
+            });
+            
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            renderSeatMap();
+            closeModal();
+        }
+
+        // 导出当前学生行为档案
+        function exportCurrentStudentRecords() {
+            if (!currentStudent) return alert('请先选择学生');
+            
+            const violationRecords = violations[currentStudent] || [];
+            const praiseRecords = praises[currentStudent] || [];
+            const attendanceRecords = attendance[currentStudent] || [];
+            
+            if (violationRecords.length === 0 && praiseRecords.length === 0 && attendanceRecords.length === 0) {
+                return alert('该学生暂无行为记录');
+            }
+
+            let content = "\ufeff记录时间,记录类型,行为内容\n";
+            
+            violationRecords.forEach(record => {
+                content += `${record.time},违纪,${record.type}\n`;
+            });
+            
+            praiseRecords.forEach(record => {
+                content += `${record.time},表扬,${record.type}\n`;
+            });
+            
+            attendanceRecords.forEach(record => {
+                const displayType = record.status === '正常' ? '销假' : record.status;
+                content += `${record.time},考勤,${displayType}\n`;
+            });
+            
+            downloadFile(`${currentStudent}个人情况记录.csv`, content);
+        }
+
+        // 导出统计 - 改进后的版本，按记录类型分类并按次数降序排列
+        function exportStatistics() {
+            // 按违纪次数统计
+            const violationStats = Object.entries(violations)
+                .map(([student, records]) => ({
+                    name: student,
+                    type: '违纪',
+                    count: records.length,
+                    latest: records[records.length-1]?.time || '无'
+                }))
+                .sort((a, b) => b.count - a.count);
+            
+            // 按表扬次数统计
+            const praiseStats = Object.entries(praises)
+                .map(([student, records]) => ({
+                    name: student,
+                    type: '表扬',
+                    count: records.length,
+                    latest: records[records.length-1]?.time || '无'
+                }))
+                .sort((a, b) => b.count - a.count);
+            
+            // 按考勤统计
+            const attendanceStats = Object.entries(attendance)
+                .map(([student, records]) => {
+                    const absences = records.filter(r => r.status === '请假').length;
+                    const absences2 = records.filter(r => r.status === '缺课').length;
+                    const cancellations = records.filter(r => r.status === '正常').length;
+                    return {
+                        name: student,
+                        type: '考勤',
+                        count: absences + absences2 + cancellations,
+                        latest: records[records.length-1]?.time || '无',
+                        details: `请假:${absences}次, 缺课:${absences2}次, 销假:${cancellations}次`
+                    };
+                })
+                .sort((a, b) => b.count - a.count);
+            
+            let content = "\ufeff姓名,记录类型,总次数,最近记录时间,详情\n";
+            
+            // 先输出违纪记录
+            violationStats.forEach(item => content += `${item.name},${item.type},${item.count},${item.latest},\n`);
+            
+            // 再输出表扬记录
+            praiseStats.forEach(item => content += `${item.name},${item.type},${item.count},${item.latest},\n`);
+            
+            // 最后输出考勤记录
+            attendanceStats.forEach(item => content += `${item.name},${item.type},${item.count},${item.latest},${item.details}\n`);
+            
+            downloadFile('班级管理情况汇总表.csv', content);
+        }
+
+        // 随机点名功能
+        function randomCall() {
+            if (students.length === 0) {
+                return alert('请先导入学生名单');
+            }
+            
+            if (availableStudents.length === 0) {
+                resetCallSystem();
+            }
+            
+            const randomIndex = Math.floor(Math.random() * availableStudents.length);
+            const selectedStudent = availableStudents[randomIndex];
+            
+            availableStudents.splice(randomIndex, 1);
+            calledStudents.push(selectedStudent);
+            localStorage.setItem('calledStudents', JSON.stringify(calledStudents));
+            
+            showCallResult(selectedStudent);
+            renderSeatMap();
+        }
+
+        // 显示点名结果
+        function showCallResult(student) {
+            const calledStudentElement = document.getElementById('calledStudent');
+            const pronunciationHint = document.getElementById('pronunciationHint');
+            
+            calledStudentElement.textContent = student;
+            
+            if (student.includes('覃')) {
+                pronunciationHint.style.display = 'block';
+            } else {
+                pronunciationHint.style.display = 'none';
+            }
+            
+            document.getElementById('callModal').style.display = 'block';
+            speakStudentName(student);
+        }
+
+        // 关闭点名弹窗
+        function closeCallModal() {
+            document.getElementById('callModal').style.display = 'none';
+        }
+
+        // 语音朗读学生姓名
+        function speakStudentName(name) {
+            const correctedName = name.replace(/覃/g, 'qín');
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(correctedName);
+                utterance.lang = 'zh-CN';
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 重置点名系统
+        function resetCallSystem() {
+            calledStudents = [];
+            availableStudents = [...students];
+            localStorage.setItem('calledStudents', JSON.stringify(calledStudents));
+        }
+
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], {type: 'text/csv;charset=UTF-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 初始化事件
+        document.getElementById('violationType').addEventListener('change', function() {
+            document.getElementById('customViolation').style.display = 
+                this.value === '其他' ? 'inline-block' : 'none';
+        });
+        
+        document.getElementById('praiseType').addEventListener('change', function() {
+            document.getElementById('customPraise').style.display = 
+                this.value === '其他好行为' ? 'inline-block' : 'none';
+        });
+        
+        document.querySelectorAll('input[name="recordType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'violation') {
+                    document.getElementById('violationSection').style.display = 'block';
+                    document.getElementById('praiseSection').style.display = 'none';
+                    document.getElementById('attendanceSection').style.display = 'none';
+                } else if (this.value === 'praise') {
+                    document.getElementById('violationSection').style.display = 'none';
+                    document.getElementById('praiseSection').style.display = 'block';
+                    document.getElementById('attendanceSection').style.display = 'none';
+                } else if (this.value === 'attendance') {
+                    document.getElementById('violationSection').style.display = 'none';
+                    document.getElementById('praiseSection').style.display = 'none';
+                    document.getElementById('attendanceSection').style.display = 'block';
+                }
+            });
+        });
+
+        // 启动系统
+        function createStars() {
+            const container = document.getElementById('starContainer');
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        createStars();
+        availableStudents = [...students];
+        if (students.length > 0) {
+            initializeSeatMap();
+        }
+    </script>
+</body>
+</html>
